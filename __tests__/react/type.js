@@ -158,14 +158,24 @@ describe("userEvent.type", () => {
     }
   );
 
-  it.each(["input", "textarea"])(
-    "should type text in <%s> up to maxLength if provided",
-    type => {
+  /**
+   * TODO: jsdom uses 0 as the default value for maxlength if unspecified,
+   * and considers is `unlimited`, which does not match specs/browser implementations.
+   */
+  it.each([
+    ["input", 10],
+    ["input", 0],
+    ["input", -10],
+    ["textarea", 10],
+    ["textarea", 0],
+    ["textarea", -10]
+  ])(
+    "should type text in <%s>, truncating to maxLength (%d) if positive",
+    (type, maxLength) => {
       const onChange = jest.fn();
       const onKeyDown = jest.fn();
       const onKeyPress = jest.fn();
       const onKeyUp = jest.fn();
-      const maxLength = 10;
 
       const { getByTestId } = render(
         React.createElement(type, {
@@ -179,7 +189,8 @@ describe("userEvent.type", () => {
       );
 
       const text = "superlongtext";
-      const slicedText = text.slice(0, maxLength);
+      const effectiveMaxLength = maxLength > 0 ? maxLength : text.length;
+      const slicedText = text.slice(0, effectiveMaxLength);
 
       const inputEl = getByTestId("input");
 
